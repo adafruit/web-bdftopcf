@@ -146,11 +146,7 @@ NameEqual (const char *a, const char *b, int l)
     return TRUE;
 }
 
-#ifdef __SUNPRO_C
-#pragma weak MakeAtom
-#endif
-
-weak Atom
+Atom
 MakeAtom(const char *string, unsigned len, int makeit)
 {
     AtomListPtr	a;
@@ -225,22 +221,14 @@ MakeAtom(const char *string, unsigned len, int makeit)
     return a->atom;
 }
 
-#ifdef __SUNPRO_C
-#pragma weak ValidAtom
-#endif
-
-weak int
+int
 ValidAtom(Atom atom)
 {
     OVERRIDE_SYMBOL(ValidAtom, atom);
     return (atom != None) && (atom <= lastAtom);
 }
 
-#ifdef __SUNPRO_C
-#pragma weak NameForAtom
-#endif
-
-weak char *
+char *
 NameForAtom(Atom atom)
 {
     OVERRIDE_SYMBOL(NameForAtom, atom);

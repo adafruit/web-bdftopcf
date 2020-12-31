@@ -493,10 +493,12 @@ bdfReadCharacters(FontFilePtr file, FontPtr pFont, bdfFileState *pState,
 							 * ENDFONT */
     }
 
+#if 0
     if (ndx + nignored != nchars) {
 	bdfError("%d too few characters\n", nchars - (ndx + nignored));
 	goto BAILOUT;
     }
+#endif
     nchars = ndx;
     bitmapFont->num_chars = nchars;
     if ((line) && (bdfIsPrefix(line, "STARTCHAR"))) {

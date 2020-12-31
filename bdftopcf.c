@@ -41,156 +41,61 @@ from The Open Group.
 #include <stdio.h>
 #include <X11/Xos.h>
 
+#include <emscripten.h>
+
 int
 main(int argc, char *argv[])
 {
-    FontRec font = { 0 };
+puts("Click Browse and select a BDF font to convert");
+fflush(stdout);
+}
 
-    FontFilePtr input, output;
-
-    char *input_name = NULL, *output_name = NULL;
-
-    char *program_name;
-
+EMSCRIPTEN_KEEPALIVE
+int font_convert() {
     int bit, byte, glyph, scan;
 
     FontDefaultFormat(&bit, &byte, &glyph, &scan);
-    program_name = argv[0];
-    argc--, argv++;
-    while (argc-- > 0) {
-        if (argv[0][0] == '-') {
-            switch (argv[0][1]) {
-            case 'p':
-                switch (argv[0][2]) {
-                case '1':
-                case '2':
-                case '4':
-                case '8':
-                    if (argv[0][3] != '\0')
-                        goto usage;
-                    glyph = argv[0][2] - '0';
-                    break;
-                default:
-                    goto usage;
-                }
-                break;
 
-            case 'u':
-                switch (argv[0][2]) {
-                case '1':
-                case '2':
-                case '4':
-                    if (argv[0][3] != '\0')
-                        goto usage;
-                    scan = argv[0][2] - '0';
-                    break;
-                default:
-                    goto usage;
-                }
-                break;
-
-            case 'm':
-                if (argv[0][2] != '\0')
-                    goto usage;
-                bit = MSBFirst;
-                break;
-
-            case 'l':
-                if (argv[0][2] != '\0')
-                    goto usage;
-                bit = LSBFirst;
-                break;
-
-            case 'M':
-                if (argv[0][2] != '\0')
-                    goto usage;
-                byte = MSBFirst;
-                break;
-
-            case 'L':
-                if (argv[0][2] != '\0')
-                    goto usage;
-                byte = LSBFirst;
-                break;
-
-            case 't':          /* attempt to make terminal fonts if possible */
-                if (argv[0][2] != '\0')
-                    goto usage;
-                break;
-
-            case 'i':          /* inhibit ink metric computation */
-                if (argv[0][2] != '\0')
-                    goto usage;
-                break;
-            case 'o':
-                if (argv[0][2])
-                    output_name = argv[0] + 2;
-                else {
-                    if (!argv[1])
-                        goto usage;
-                    argv++;
-                    argc--;
-                    output_name = argv[0];
-                }
-                break;
-
-            case 'v':
-                printf("%s\n", PACKAGE_STRING);
-                exit(0);
-
-            default:
-                goto usage;
-            }
-        }
-        else {
-            if (input_name) {
- usage:
-                fprintf(stderr, "%s: invalid option '%s'\n",
-                        program_name, argv[0]);
-                fprintf(stderr,
-                        "usage: %s [-p#] [-u#] [-m] [-l] [-M] [-L] [-t] [-i] [-o pcf file] [bdf file]\n"
-                        "       where # for -p is 1, 2, 4, or 8\n"
-                        "       and   # for -u is 1, 2, or 4\n",
-                        program_name);
-                exit(1);
-            }
-            input_name = argv[0];
-        }
-        argv++;
+const char *input_name = "/input.bdf", *output_name="/output.pcf";
+    FontRec font = { 0 };
+    FontFilePtr input = NULL, output = NULL;
+fprintf(stderr, "opening %s\n", input_name); fflush(stderr);
+    input = FontFileOpen(input_name);
+fprintf(stderr, "opened %s\n", input_name); fflush(stderr);
+    output = FontFileOpenWrite(output_name);
+    int result = Successful;
+    if (!input) {
+        fprintf(stderr, "can't open bdf source file %s\n",
+                input_name); fflush(stderr);
+        result = 0;
     }
-    if (input_name) {
-        input = FontFileOpen(input_name);
-        if (!input) {
-            fprintf(stderr, "%s: can't open bdf source file %s\n",
-                    program_name, input_name);
-            exit(1);
+    if (!output) {
+        fprintf(stderr, "can't open pcf sink file %s\n",
+                output_name); fflush(stderr);
+        result = 0;
+    }
+    if (result == Successful) {
+        fprintf(stderr, "reading input font\n");
+        result = bdfReadFont(&font, input, bit, byte, glyph, scan);
+        if (result != Successful) {
+            fprintf(stderr, "bdf input, corrupt\n");
         }
     }
-    else
-        input = FontFileOpenFd(STDIN_FILENO);
-    if (bdfReadFont(&font, input, bit, byte, glyph, scan) != Successful) {
-        fprintf(stderr, "%s: bdf input, %s, corrupt\n",
-                program_name, input_name ? input_name : "<stdin>");
-        exit(1);
-    }
-    if (output_name) {
-        output = FontFileOpenWrite(output_name);
-        if (!output) {
-            fprintf(stderr, "%s: can't open pcf sink file %s\n",
-                    program_name, output_name);
-            exit(1);
-        }
-    }
-    else
-        output = FontFileOpenWriteFd(STDOUT_FILENO);
-    if (pcfWriteFont(&font, output) != Successful) {
-        fprintf(stderr, "%s: can't write pcf file %s\n",
-                program_name, output_name ? output_name : "<stdout>");
-        if (output_name)
+fprintf(stderr, "result=%d\n", result);
+    if (result == Successful) {
+fprintf(stderr, "inexplicably writing font\n"); fflush(stderr);
+
+        result = pcfWriteFont(&font, output);
+        if (result != Successful) {
+            fprintf(stderr, "can't write pcf file %s\n", output_name); fflush(stderr);
             remove(output_name);
-        exit(1);
+        }
     }
-    else
+fprintf(stderr, "closing input? %p\n", input); fflush(stderr);
+    if (input)
+        FontFileClose(input);
+fprintf(stderr, "closing output? %p\n", output); fflush(stderr);
+    if (output)
         FontFileClose(output);
-    return (0);
+    return (result == Successful);
 }
