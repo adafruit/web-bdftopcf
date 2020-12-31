@@ -14,13 +14,13 @@ jobs:
         container: debian:buster
 
         steps:
+            - name: checkout
+              uses: actions/checkout@v2
+
             - name: install dependencies
               run: |
                 apt-get update
                 apt-get --no-install-recommends -y install build-essential git
-
-            - name: checkout
-              uses: actions/checkout@v2
 
             - name: build
               run: |
