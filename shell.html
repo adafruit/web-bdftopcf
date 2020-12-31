@@ -5,9 +5,17 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>bdftopcf font converter</title>
     <style>
-      .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
+      form label, form button {
+        background-color: #7F9CCB;
+        padding: 5px 10px;
+        border-radius: 5px;
+        border: 1px ridge black;
+        font-size: 0.8rem;
+        height: auto;
+      }
+
+      .emscripten { display: block; }
       textarea.emscripten { font-family: monospace; width: 80%; }
-      div.emscripten { text-align: center; }
       div.emscripten_border { border: 1px solid black; }
       /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
       canvas.emscripten { border: 0px none; background-color: black; }
@@ -47,6 +55,8 @@
     </style>
   </head>
   <body>
+    Convert a font in BDF format to PCF format for use with CircuitPython.  CircuitPython can load PCF files more quickly, and they are also somewhat smaller.
+
     <figure style="overflow:visible;" id="spinner"><div class="spinner"></div><center style="margin-top:0.5em"><strong>emscripten</strong></center></figure>
     <div class="emscripten" id="status">Downloading...</div>
     <div class="emscripten">
@@ -54,47 +64,45 @@
     </div>
     
     <form method="POST" enctype="multipart/form-data">
-        <label for="bdffont">Upload BDF font: <input type="file" id="bdffont" name="bdffont" accept=".bdf"/>
+        <label for="bdffont">Browse</label><input type="file" id="bdffont" name="bdffont" accept=".bdf" style="opacity:0"/>
         <br>
         <!-- <input type="submit" value="Convert" onSubmit="return convert_me()"/> -->
     </form>
-    <hr>
+    <br/>
 
     <div id="outputDiv"/>
 
-    <textarea class="emscripten" id="output" rows="8"></textarea>
+    <textarea class="emscripten" id="output" rows="8" style="display:none"></textarea>
     <script type='text/javascript'>
-        function downloadData(name, data) {
-            var as_str = String.fromCharCode.apply(null, data);
-            var datauri = "data:application/binary;base64," + btoa(as_str)
-            var link = document.createElement("a");
-            link.download = name;
-            link.href = datauri;
-            link.target = "blank";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            delete link;
-        }
+      function downloadData(name, data) {
+          var as_str = String.fromCharCode.apply(null, data);
+          var datauri = "data:application/binary;base64," + btoa(as_str)
+          var link = document.createElement("a");
+          link.download = name;
+          link.href = datauri;
+          link.target = "blank";
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          delete link;
+      }
 
-        document.querySelector('#bdffont').addEventListener('change', (event) => {
-        console.log("convert_me");
-        var file = document.getElementById("bdffont");
-        if (file.files.length) {
-            var reader = new FileReader();
-            reader.onload = function(e) {
-                FS.writeFile("/input.bdf", e.target.result);
-                // Module._font_convert("/input.bdf", "/output.pcf");
-                var result = Module._font_convert();
-                console.log("result = " + result);
-                var ofn = file.value.replace(/.*[/\\]/, "").replace(/\.bdf$/i, "") + ".pcf"
-                if(result != 0) {
-                    downloadData(ofn, FS.readFile("/output.pcf"));
-                }
-            }
-            reader.readAsBinaryString(file.files[0]);
-        }
-        return false;
+      document.querySelector('#bdffont').addEventListener('change', (event) => {
+      var file = document.getElementById("bdffont");
+      if (file.files.length) {
+          var reader = new FileReader();
+          reader.onload = function(e) {
+              FS.writeFile("/input.bdf", e.target.result);
+              // Module._font_convert("/input.bdf", "/output.pcf");
+              var result = Module._font_convert();
+              var ofn = file.value.replace(/.*[/\\]/, "").replace(/\.bdf$/i, "") + ".pcf"
+              if(result != 0) {
+                  downloadData(ofn, FS.readFile("/output.pcf"));
+              }
+          }
+          reader.readAsBinaryString(file.files[0]);
+      }
+      return false;
       });
       var statusElement = document.getElementById('status');
       var progressElement = document.getElementById('progress');
@@ -116,6 +124,7 @@
             //text = text.replace('\n', '<br>', 'g');
             console.log(text);
             if (element) {
+              element.style = ""
               element.value += text + "\n";
               element.scrollTop = element.scrollHeight; // focus on bottom
             }
@@ -126,6 +135,7 @@
           if (0) { // XXX disabled for safety typeof dump == 'function') {
             dump(text + '\n'); // fast, straight to the real console
           } else {
+            outputElement.style = ""
             outputElement.value += text + "\n";
             outputElement.scrollTop = outputElement.scrollHeight; // focus on bottom
             console.error(text);

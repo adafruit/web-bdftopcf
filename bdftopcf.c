@@ -46,22 +46,18 @@ from The Open Group.
 int
 main(int argc, char *argv[])
 {
-puts("Click Browse and select a BDF font to convert");
-fflush(stdout);
 }
 
 EMSCRIPTEN_KEEPALIVE
 int font_convert() {
+    const char *input_name = "/input.bdf", *output_name="/output.pcf";
+    FontRec font = { 0 };
+    FontFilePtr input = NULL, output = NULL;
     int bit, byte, glyph, scan;
 
     FontDefaultFormat(&bit, &byte, &glyph, &scan);
 
-const char *input_name = "/input.bdf", *output_name="/output.pcf";
-    FontRec font = { 0 };
-    FontFilePtr input = NULL, output = NULL;
-fprintf(stderr, "opening %s\n", input_name); fflush(stderr);
     input = FontFileOpen(input_name);
-fprintf(stderr, "opened %s\n", input_name); fflush(stderr);
     output = FontFileOpenWrite(output_name);
     int result = Successful;
     if (!input) {
@@ -81,9 +77,8 @@ fprintf(stderr, "opened %s\n", input_name); fflush(stderr);
             fprintf(stderr, "bdf input, corrupt\n");
         }
     }
-fprintf(stderr, "result=%d\n", result);
     if (result == Successful) {
-fprintf(stderr, "inexplicably writing font\n"); fflush(stderr);
+      fprintf(stderr, "preparing output font\n"); fflush(stderr);
 
         result = pcfWriteFont(&font, output);
         if (result != Successful) {
@@ -91,10 +86,8 @@ fprintf(stderr, "inexplicably writing font\n"); fflush(stderr);
             remove(output_name);
         }
     }
-fprintf(stderr, "closing input? %p\n", input); fflush(stderr);
     if (input)
         FontFileClose(input);
-fprintf(stderr, "closing output? %p\n", output); fflush(stderr);
     if (output)
         FontFileClose(output);
     return (result == Successful);
