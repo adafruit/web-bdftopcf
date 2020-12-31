@@ -75,7 +75,7 @@
     <textarea class="emscripten" id="output" rows="8" style="display:none"></textarea>
     <script type='text/javascript'>
       function downloadData(name, data) {
-          var as_str = String.fromCharCode.apply(null, data);
+          var as_str = Array.from(data).map((c)=>String.fromCharCode(c)).join("")
           var datauri = "data:application/binary;base64," + btoa(as_str)
           var link = document.createElement("a");
           link.download = name;
