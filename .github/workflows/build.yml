@@ -1,0 +1,41 @@
+name: Build CI
+
+on:
+    push:
+    pull_request:
+    release:
+        types: [published]
+    check_suite:
+        types: [rerequested]
+
+jobs:
+    test:
+        runs-on: ubuntu-18.04
+        container: debian:buster
+
+        steps:
+            - name: install dependencies
+              run: |
+                apt-get update
+                apt-get --no-install-recommends -y install build-essential git
+
+            - name: checkout
+              uses: actions/checkout@v2
+
+            - name: build
+              run: |
+                docker run --rm -v $(pwd):/src -u $(id -u):$(id -g) emscripten/emsdk ./build.sh
+
+            - if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+              name: publish
+              run: |
+                git branch -D gh-pages || true
+                python3 import.py | git fast-import --date-format=now
+                git config user.email "jepler@gmail.com"
+                git config user.name "Jeff Epler (github actions)"
+                git remote set-url --push origin https://jepler:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+
+            - uses: actions/upload-artifact@v2
+              with:
+                name: Web pages
+                path: output/
