@@ -18,8 +18,8 @@ jobs:
 
             - name: install dependencies
               run: |
-                apt-get update
-                apt-get --no-install-recommends -y install build-essential git
+                sudo apt-get update
+                sudo apt-get --no-install-recommends -y install build-essential git
 
             - name: build
               run: |
