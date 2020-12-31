@@ -20,7 +20,7 @@ fd.write(b"data <<EOF" + b"\n")
 fd.write(b"Docs built at " + version.encode('utf-8') + b"\n")
 fd.write(b"EOF" + b"\n")
 
-files = glob.glob("doc/*")
+files = glob.glob("output/*")
 for fn in files:
     with open(fn, 'rb') as f: contents = f.read()
     fd.write(b"M 644 inline " + os.path.basename(fn).encode('utf-8') + b"\n")
