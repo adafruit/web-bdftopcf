@@ -33,6 +33,7 @@ jobs:
                 git config user.email "jepler@gmail.com"
                 git config user.name "Jeff Epler (github actions)"
                 git remote set-url --push origin https://jepler:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+                git push -f origin gh-pages
 
             - uses: actions/upload-artifact@v2
               with:
