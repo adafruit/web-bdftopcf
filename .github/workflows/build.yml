@@ -30,8 +30,8 @@ jobs:
               run: |
                 git branch -D gh-pages || true
                 python3 import.py | git fast-import --date-format=now
-                git config user.email "jepler@gmail.com"
-                git config user.name "Jeff Epler (github actions)"
+                git config user.email "jeff@adafruit.com"
+                git config user.name "Jeff Epler (Adafruit) via github actions"
                 git remote set-url --push origin https://jepler:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
                 git push -f origin gh-pages
 
