@@ -51,6 +51,8 @@ typedef struct BDFSTAT {
     int         digitCount;
     int         digitWidths;
     int         exHeight;
+    int         sWidthDefault;
+    int         dWidthDefault;
 
     FontPropPtr fontProp;
     FontPropPtr pointSizeProp;

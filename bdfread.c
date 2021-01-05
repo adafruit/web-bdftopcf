@@ -402,36 +402,39 @@ bdfReadCharacters(FontFilePtr file, FontPtr pFont, bdfFileState *pState,
 	}
 
 	line = bdfGetLine(file, lineBuf, BDFLINELEN);
-	if ((!line) || (sscanf((char *) line, "SWIDTH %d %d", &wx, &wy) != 2)) {
-	    bdfError("bad 'SWIDTH'\n");
-	    goto BAILOUT;
-	}
-	if (wy != 0) {
-	    bdfError("SWIDTH y value must be zero\n");
-	    goto BAILOUT;
-	}
-	if (bitmapExtra)
-	    bitmapExtra->sWidths[ndx] = wx;
+        if (line && bdfIsPrefix(line, "SWIDTH")) {
+            if ((!line) || (sscanf((char *) line, "SWIDTH %d %d", &wx, &wy) != 2)) {
+                bdfError("bad 'SWIDTH'\n");
+                goto BAILOUT;
+            }
+            if (wy != 0) {
+                bdfError("SWIDTH y value must be zero\n");
+                goto BAILOUT;
+            }
+            line = bdfGetLine(file, lineBuf, BDFLINELEN);
+        } else {
+            wx = pState->sWidthDefault;
+        }
+        if (bitmapExtra)
+            bitmapExtra->sWidths[ndx] = wx;
 
-/* 5/31/89 (ef) -- we should be able to ditch the character and recover */
-/*		from all of these.					*/
+	if (line && bdfIsPrefix(line, "DWIDTH")) {
+            if (sscanf((char *) line, "DWIDTH %d %d", &wx, &wy) != 2) {
+                bdfError("bad 'DWIDTH'\n");
+                goto BAILOUT;
+            }
+            line = bdfGetLine(file, lineBuf, BDFLINELEN);
+	} else {
+            wx = pState->dWidthDefault;
+        }
 
-	line = bdfGetLine(file, lineBuf, BDFLINELEN);
-	if ((!line) || (sscanf((char *) line, "DWIDTH %d %d", &wx, &wy) != 2)) {
-	    bdfError("bad 'DWIDTH'\n");
-	    goto BAILOUT;
-	}
-	if (wy != 0) {
-	    bdfError("DWIDTH y value must be zero\n");
-	    goto BAILOUT;
-	}
 	/* xCharInfo metrics are stored as INT16 */
 	if ((wx < INT16_MIN) || (wx > INT16_MAX)) {
 	    bdfError("character '%s' has out of range width, %d\n",
 		     charName, wx);
 	    goto BAILOUT;
 	}
-	line = bdfGetLine(file, lineBuf, BDFLINELEN);
+
 	if ((!line) || (sscanf((char *) line, "BBX %d %d %d %d", &bw, &bh, &bl, &bb) != 4)) {
 	    bdfError("bad 'BBX'\n");
 	    goto BAILOUT;
@@ -613,6 +616,48 @@ bdfReadHeader(FontFilePtr file, bdfFileState *pState)
 /***====================================================================***/
 
 static Bool
+bdfReadMetricsSet(FontFilePtr file, FontPtr pFont, bdfFileState *pState,
+                  unsigned char *line, unsigned char *lineBuf, size_t lineLen)
+{
+    int metricsSet, wx, wy;
+    if (sscanf((char *) line, "METRICSSET %d", &metricsSet) != 1) {
+	    bdfError("bad 'METRICSSET'\n");
+	    goto BAILOUT;
+    }
+
+    do {
+	line = bdfGetLine(file, lineBuf, lineLen);
+        if (!line) goto BAILOUT;
+
+        if (bdfIsPrefix(line, "SWIDTH")) {
+            if ((!line) || (sscanf((char *) line, "SWIDTH %d %d", &wx, &wy) != 2)) {
+                bdfError("bad 'SWIDTH'\n");
+                goto BAILOUT;
+            }
+            pState->sWidthDefault = wx;
+        }
+        if (bdfIsPrefix(line, "DWIDTH")) {
+            if ((!line) || (sscanf((char *) line, "DWIDTH %d %d", &wx, &wy) != 2)) {
+                bdfError("bad 'DWIDTH'\n");
+                goto BAILOUT;
+            }
+            pState->dWidthDefault = wx;
+        }
+    } while(
+        bdfIsPrefix(line, "SWIDTH") ||
+        bdfIsPrefix(line, "DWIDTH") ||
+        bdfIsPrefix(line, "SWIDTH1") ||
+        bdfIsPrefix(line, "DWIDTH1") ||
+        bdfIsPrefix(line, "VVECTOR"));
+    return (TRUE);
+
+    BAILOUT:
+        return (FALSE);
+}
+
+/***====================================================================***/
+
+static Bool
 bdfReadProperties(FontFilePtr file, FontPtr pFont, bdfFileState *pState)
 {
     int         nProps, props_left,
@@ -627,6 +672,9 @@ bdfReadProperties(FontFilePtr file, FontPtr pFont, bdfFileState *pState)
     BitmapFontPtr  bitmapFont = (BitmapFontPtr) pFont->fontPrivate;
 
     line = bdfGetLine(file, lineBuf, BDFLINELEN);
+    if (line && bdfIsPrefix(line, "METRICSSET")) {
+        bdfReadMetricsSet(file, pFont, pState, line, lineBuf, BDFLINELEN);
+    }
     if (!line || !bdfIsPrefix(line, "STARTPROPERTIES")) {
 	bdfError("missing 'STARTPROPERTIES'\n");
 	return (FALSE);
