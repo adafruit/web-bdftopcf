@@ -263,8 +263,7 @@ bdfReadCharacters(FontFilePtr file, FontPtr pFont, bdfFileState *pState,
     register CharInfoPtr ci;
     int         i,
                 ndx,
-                nchars,
-                nignored;
+                nchars;
     unsigned int char_row, char_col;
     int         numEncodedGlyphs = 0;
     CharInfoPtr *bdfEncoding[256];
@@ -332,7 +331,6 @@ bdfReadCharacters(FontFilePtr file, FontPtr pFont, bdfFileState *pState,
     pFont->info.lastRow = 0;
     pFont->info.firstCol = 256;
     pFont->info.lastCol = 0;
-    nignored = 0;
     for (ndx = 0; (ndx < nchars) && (line) && (bdfIsPrefix(line, "STARTCHAR"));) {
 	int         t;
 	int         wx;		/* x component of width */
@@ -368,7 +366,6 @@ bdfReadCharacters(FontFilePtr file, FontPtr pFont, bdfFileState *pState,
 	ignore = 0;
 	if (enc == -1) {
 	    if (!bitmapExtra) {
-		nignored++;
 		ignore = 1;
 	    }
 	} else if (enc > MAXENCODING) {
@@ -496,12 +493,6 @@ bdfReadCharacters(FontFilePtr file, FontPtr pFont, bdfFileState *pState,
 							 * ENDFONT */
     }
 
-#if 0
-    if (ndx + nignored != nchars) {
-	bdfError("%d too few characters\n", nchars - (ndx + nignored));
-	goto BAILOUT;
-    }
-#endif
     nchars = ndx;
     bitmapFont->num_chars = nchars;
     if ((line) && (bdfIsPrefix(line, "STARTCHAR"))) {
