@@ -10,7 +10,7 @@ on:
 
 jobs:
     test:
-        runs-on: ubuntu-18.04
+        runs-on: ubuntu-latest
 
         steps:
             - name: checkout
@@ -35,7 +35,7 @@ jobs:
                 git remote set-url --push origin https://jepler:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
                 git push -f origin gh-pages
 
-            - uses: actions/upload-artifact@v2
+            - uses: actions/upload-artifact@v4
               with:
                 name: Web pages
                 path: output/
